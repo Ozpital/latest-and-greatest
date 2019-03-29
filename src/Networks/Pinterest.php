@@ -38,9 +38,8 @@ class Pinterest extends LatestAndGreatest {
      */
     public function __construct($options = []) {
         try {
+            $this->setUserName(isset($options['username'])?$options['username']:false);
             parent::__construct($options);
-            $this->setUserName();
-            parent::init();
         } catch (Exception $e) {
             echo '<pre>';
             echo 'Message: ' . $e->getMessage(). PHP_EOL;
@@ -54,12 +53,16 @@ class Pinterest extends LatestAndGreatest {
     /**
      * Set the user name
      */
-    public function setUserName() {
-        if (!getenv('PINTEREST_USERNAME')) {
-            throw new Exception('No PINTEREST_USERNAME defined in your .env');
+    public function setUserName($username = false) {
+        if (!$username && !getenv('PINTEREST_USERNAME')) {
+            throw new Exception('No PINTEREST_USERNAME defined in your .env or username is not set in options');
         }
 
-        $this->userName = getenv('PINTEREST_USERNAME');
+        if ($username) {
+            $this->userName = $username;
+        } else {
+            $this->userName = getenv('PINTEREST_USERNAME');
+        }
     }
 
     /**

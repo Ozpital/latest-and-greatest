@@ -17,25 +17,31 @@ class Instagram extends LatestAndGreatest {
 
     /**
      * Initalise the API secret variable
-     * @var String
+     * @var string
      */
     protected $userName;
 
     /**
+     * Define number of results
+     * @var integer
+     */
+    protected $maxResults = 4;
+
+    /**
      * Define the API end point
-     * @var String
+     * @var string
      */
     protected $endpoint = 'https://api.instagram.com/v1/';
 
     /**
      * Prepare endpoint response variable
-     * @var Object
+     * @var object
      */
     protected $endpointResponseUserData;
 
     /**
      * Prepare endpoint response variable
-     * @var Object
+     * @var object
      */
     protected $endpointResponseUserMedia;
 
@@ -44,10 +50,9 @@ class Instagram extends LatestAndGreatest {
      */
     public function __construct($options = []) {
         try {
+            $this->setUserName(isset($options['username'])?$options['username']:false);
+            $this->setAccessToken(isset($options['access_token'])?$options['access_token']:false);
             parent::__construct($options);
-            $this->setUserName();
-            $this->setAccessToken();
-            parent::init();
         } catch (Exception $e) {
             echo '<pre>';
             echo 'Message: ' . $e->getMessage(). PHP_EOL;
@@ -60,13 +65,14 @@ class Instagram extends LatestAndGreatest {
 
     /**
      * Set the page name
+     * @deprecated Not required for loading profile.
      */
-    public function setUserName() {
-        if (!getenv('INSTAGRAM_USERNAME')) {
-            throw new Exception('No INSTAGRAM_USERNAME defined in your .env');
+    public function setUserName($userName = false) {
+        if ($userName) {
+            $this->userName = $userName;
+        } else {
+            $this->userName = getenv('INSTAGRAM_USERNAME');
         }
-
-        $this->userName = getenv('INSTAGRAM_USERNAME');
     }
 
     /**
@@ -79,12 +85,16 @@ class Instagram extends LatestAndGreatest {
     /**
      * Set the access token
      */
-    public function setAccessToken() {
-        if (!getenv('INSTAGRAM_ACCESS_TOKEN')) {
-            throw new Exception('No INSTAGRAM_ACCESS_TOKEN defined in your .env');
+    public function setAccessToken($accessToken = false) {
+        if (!$accessToken && !getenv('INSTAGRAM_ACCESS_TOKEN')) {
+            throw new Exception('No INSTAGRAM_ACCESS_TOKEN defined in your .env or access_token is not set in options');
         }
 
-        $this->accessToken = getenv('INSTAGRAM_ACCESS_TOKEN');
+        if ($accessToken) {
+            $this->accessToken = $accessToken;
+        } else {
+            $this->accessToken = getenv('INSTAGRAM_ACCESS_TOKEN');
+        }
     }
 
     /**
@@ -135,6 +145,7 @@ class Instagram extends LatestAndGreatest {
         $url = 'users/self/media/recent';
 
         $query = [
+            'count' => $this->maxResults,
             'access_token' => $this->getAccessToken()
         ];
 
@@ -164,17 +175,19 @@ class Instagram extends LatestAndGreatest {
      * Get page profile array
      * @return Array
      */
-    public function getProfileArray() {
-        $array = [
-            'username' => $this->getUserName()
-        ];
+    protected function getProfileArray() {
+        $array = [];
 
         // Get profile image data from API
         $endpointResult = $this->getUserDataEndpointResponse();
 
         if ($endpointResult) {
+
+            $array['username'] = $endpointResult->data->username;
+
             // Get image as data string
             $imageDataString = @file_get_contents($endpointResult->data->profile_picture);
+
 
             // Get image dimensions and mime type
             $imageData = getimagesizefromstring($imageDataString);
@@ -194,7 +207,7 @@ class Instagram extends LatestAndGreatest {
      * Get releavant statistics
      * @return Array
      */
-    public function getStatisticsArray() {
+    protected function getStatisticsArray() {
         // Get api data
         $endpointResult = $this->getUserDataEndpointResponse();
 
@@ -211,13 +224,13 @@ class Instagram extends LatestAndGreatest {
      * Get an array of posts
      * @return Array
      */
-    public function getPostsArray() {
+    protected function getPostsArray() {
         // Get api data
         $endpointResult = $this->getUserMediaEndpointResponse();
 
         // Create posts array
         $posts = [];
-        $index = 0;
+
         foreach ($endpointResult->data as $post) {
             $posts[] = [
                 'id' => $post->id,
@@ -233,10 +246,6 @@ class Instagram extends LatestAndGreatest {
                 ]
             ];
 
-            $index ++;
-            if ($index === $this->maxResults) {
-                break;
-            }
         }
 
         return $posts;

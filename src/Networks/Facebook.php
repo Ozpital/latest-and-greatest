@@ -45,11 +45,10 @@ class Facebook extends LatestAndGreatest {
      */
     public function __construct($options = []) {
         try {
+            $this->setAppKey(isset($options['app_key'])?$options['app_key']:false);
+            $this->setAppSecret(isset($options['app_secret'])?$options['app_secret']:false);
+            $this->setPageName(isset($options['page_name'])?$options['page_name']:false);
             parent::__construct($options);
-            $this->setAppKey();
-            $this->setAppSecret();
-            $this->setPageName();
-            parent::init();
         } catch (Exception $e) {
             echo '<pre>';
             echo 'Message: ' . $e->getMessage(). PHP_EOL;
@@ -63,34 +62,46 @@ class Facebook extends LatestAndGreatest {
     /**
      * Set the app key
      */
-    public function setAppKey() {
-        if (!getenv('FACEBOOK_APP_ID')) {
-            trigger_error('No Facebook app ID defined in your .env', E_USER_ERROR);
+    public function setAppKey($appKey = false) {
+        if (!$appKey && !getenv('FACEBOOK_APP_ID')) {
+            throw new Exception('No FACEBOOK_APP_ID defined in your .env or app_key is not set in options');
         }
 
-        $this->appId = getenv('FACEBOOK_APP_ID');
+        if ($appKey) {
+            $this->appId = $appKey;
+        } else {
+            $this->appId = getenv('FACEBOOK_APP_ID');
+        }
     }
 
     /**
      * Set the app secret
      */
-    public function setAppSecret() {
-        if (!getenv('FACEBOOK_APP_SECRET')) {
-            trigger_error('No Facebook app secret defined in your .env', E_USER_ERROR);
+    public function setAppSecret($appSecret = false) {
+        if (!$appSecret && !getenv('FACEBOOK_APP_SECRET')) {
+            throw new Exception('No FACEBOOK_APP_SECRET defined in your .env or app_secret is not set in options');
         }
 
-        $this->appSecret = getenv('FACEBOOK_APP_SECRET');
+        if ($appSecret) {
+            $this->appSecret = $appSecret;
+        } else {
+            $this->appSecret = getenv('FACEBOOK_APP_SECRET');
+        }
     }
 
     /**
      * Set the page name
      */
-    public function setPageName() {
-        if (!getenv('FACEBOOK_PAGE_NAME')) {
-            trigger_error('No Facebook page name defined in your .env', E_USER_ERROR);
+    public function setPageName($pageName = false) {
+        if (!$pageName && !getenv('FACEBOOK_PAGE_NAME')) {
+            throw new Exception('No FACEBOOK_PAGE_NAME defined in your .env or page_name is not set in options');
         }
 
-        $this->pageName = getenv('FACEBOOK_PAGE_NAME');
+        if ($pageName) {
+            $this->pageName = $pageName;
+        } else {
+            $this->pageName = getenv('FACEBOOK_PAGE_NAME');
+        }
     }
 
     /**

@@ -43,11 +43,10 @@ class YouTube extends LatestAndGreatest {
      */
     public function __construct($options = []) {
         try {
+            $this->setApiKey(isset($options['api_key'])?$options['api_key']:false);
+            $this->setChannelID(isset($options['channel_id'])?$options['channel_id']:false);
+            $this->setUserName(isset($options['username'])?$options['username']:false);
             parent::__construct($options);
-            $this->setApiKey();
-            $this->setChannelID();
-            $this->setUserName();
-            parent::init();
         } catch (Exception $e) {
             echo '<pre>';
             echo 'Message: ' . $e->getMessage(). PHP_EOL;
@@ -61,12 +60,47 @@ class YouTube extends LatestAndGreatest {
     /**
      * Set the user name
      */
-    public function setUserName() {
-        if (!getenv('YOUTUBE_USERNAME')) {
-            throw new Exception('No YOUTUBE_USERNAME defined in your .env');
+    public function setUserName($username = false) {
+        if (!$username && !getenv('YOUTUBE_USERNAME')) {
+            throw new Exception('No YOUTUBE_USERNAME defined in your .env or username is not set in options');
         }
 
-        $this->userName = getenv('YOUTUBE_USERNAME');
+        if ($username) {
+            $this->userName = $username;
+        } else {
+            $this->userName = getenv('YOUTUBE_USERNAME');
+        }
+    }
+
+    /**
+     * Set the API Key
+     */
+    public function setApiKey($apiKey = false) {
+        if (!$apiKey && !getenv('GOOGLE_API_KEY')) {
+            throw new Exception('No GOOGLE_API_KEY defined in your .env or api_key is not set in options');
+        }
+
+        if ($apiKey) {
+            $this->apiKey = $apiKey;
+        } else {
+            $this->apiKey = getenv('GOOGLE_API_KEY');
+        }
+    }
+
+    /**
+     * Set the Channel ID
+     */
+    public function setChannelID($channelId = false) {
+        if (!$channelId && !getenv('YOUTUBE_CHANNELID')) {
+            throw new Exception('No YOUTUBE_CHANNELID defined in your .env or channel_id is not set in options');
+        }
+
+        if ($channelId) {
+            $this->channelID = $channelId;
+        } else {
+            $this->channelID = getenv('YOUTUBE_CHANNELID');
+        }
+
     }
 
     /**
@@ -133,28 +167,6 @@ class YouTube extends LatestAndGreatest {
         ];
 
         return $this->endpoint . 'channels?' . http_build_query($args);
-    }
-
-    /**
-     * Set the API Key
-     */
-    public function setApiKey() {
-        if (!getenv('GOOGLE_API_KEY')) {
-            throw new Exception('No GOOGLE_API_KEY key defined in your .env');
-        }
-
-        $this->apiKey = getenv('GOOGLE_API_KEY');
-    }
-
-    /**
-     * Set the Channel ID
-     */
-    public function setChannelID() {
-       if (!getenv('YOUTUBE_CHANNELID')) {
-           throw new Exception('No YOUTUBE_CHANNELID defined in your .env');
-       }
-
-       $this->channelID = getenv('YOUTUBE_CHANNELID');
     }
 
     /**

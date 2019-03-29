@@ -61,14 +61,13 @@ class Twitter extends LatestAndGreatest {
      */
     public function __construct($options = []) {
         try {
+            $this->setApiKey(isset($options['api_key'])?$options['api_key']:false);
+            $this->setApiSecret(isset($options['api_secret'])?$options['api_secret']:false);
+            $this->setAccessToken(isset($options['access_token'])?$options['access_token']:false);
+            $this->setAccessTokenSecret(isset($options['access_token_secret'])?$options['access_token_secret']:false);
+            $this->setUserName(isset($options['username'])?$options['username']:false);
             parent::__construct($options);
-            $this->setApiKey();
-            $this->setApiSecret();
-            $this->setAccessToken();
-            $this->setAccessTokenSecret();
-            $this->setUserName();
             $this->createConnection();
-            parent::init();
         } catch (Exception $e) {
             echo '<pre>';
             echo 'Message: ' . $e->getMessage(). PHP_EOL;
@@ -82,56 +81,76 @@ class Twitter extends LatestAndGreatest {
     /**
      * Set the Twitter API key with the `TWITTER_API_KEY` defined in the .env file
      */
-    public function setApiKey() {
-        if (!getenv('TWITTER_API_KEY')) {
-            throw new Exception('No TWITTER_API_KEY defined in your .env');
+    public function setApiKey($apiKey = false) {
+        if (!$apiKey && !getenv('TWITTER_API_KEY')) {
+            throw new Exception('No TWITTER_API_KEY defined in your .env or api_key is not set in options');
         }
 
-        $this->apiKey = getenv('TWITTER_API_KEY');
+        if ($apiKey) {
+            $this->apiKey = $apiKey;
+        } else {
+            $this->apiKey = getenv('TWITTER_API_KEY');
+        }
     }
 
     /**
      * Set the Twitter API secret with the `TWITTER_API_SECRET` defined in the .env file
      */
-    public function setApiSecret() {
-        if (!getenv('TWITTER_API_SECRET')) {
-            throw new Exception('No TWITTER_API_SECRET defined in your .env');
+    public function setApiSecret($apiSecret = false) {
+        if (!$apiSecret && !getenv('TWITTER_API_SECRET')) {
+            throw new Exception('No TWITTER_API_SECRET defined in your .env or api_secret is not set in options');
         }
 
-        $this->apiSecret = getenv('TWITTER_API_SECRET');
+        if ($apiSecret) {
+            $this->apiSecret = $apiSecret;
+        } else {
+            $this->apiSecret = getenv('TWITTER_API_SECRET');
+        }
     }
 
     /**
      * Set the Twitter access token with the `TWITTER_ACCESS_TOKEN` defined in the .env file
      */
-    public function setAccessToken() {
-        if (!getenv('TWITTER_ACCESS_TOKEN')) {
-            throw new Exception('No TWITTER_ACCESS_TOKEN defined in your .env');
+    public function setAccessToken($accessToken = false) {
+        if (!$accessToken && !getenv('TWITTER_ACCESS_TOKEN')) {
+            throw new Exception('No TWITTER_ACCESS_TOKEN defined in your .env or access_token is not set in options');
         }
 
-        $this->accessToken = getenv('TWITTER_ACCESS_TOKEN');
+        if ($accessToken) {
+            $this->accessToken = $accessToken;
+        } else {
+            $this->accessToken = getenv('TWITTER_ACCESS_TOKEN');
+        }
     }
 
     /**
      * Set the Twitter access token secret with the `TWITTER_ACCESS_TOKEN_SECRET` defined in the .env file
      */
-    public function setAccessTokenSecret() {
-        if (!getenv('TWITTER_ACCESS_TOKEN_SECRET')) {
-            throw new Exception('No TWITTER_ACCESS_TOKEN_SECRET defined in your .env');
+    public function setAccessTokenSecret($accessTokenSecret = false) {
+        if (!$accessTokenSecret && !getenv('TWITTER_ACCESS_TOKEN_SECRET')) {
+            throw new Exception('No TWITTER_ACCESS_TOKEN_SECRET defined in your .env or access_token_secret is not set in options');
         }
 
-        $this->accessTokenSecret = getenv('TWITTER_ACCESS_TOKEN_SECRET');
+        if ($accessTokenSecret) {
+            $this->accessTokenSecret = $accessTokenSecret;
+        } else {
+            $this->accessTokenSecret = getenv('TWITTER_ACCESS_TOKEN_SECRET');
+        }
     }
 
     /**
      * Set the user name
      */
-    public function setUserName() {
-        if (!getenv('TWITTER_USERNAME')) {
-            throw new Exception('No TWITTER_USERNAME defined in your .env');
+    public function setUserName($username = false) {
+        if (!$username && !getenv('TWITTER_USERNAME')) {
+            throw new Exception('No TWITTER_USERNAME defined in your .env or username is not set in options');
         }
 
-        $this->userName = getenv('TWITTER_USERNAME');
+        if ($username) {
+            $this->userName = $username;
+        } else {
+            $this->userName = getenv('TWITTER_USERNAME');
+        }
     }
 
     /**
