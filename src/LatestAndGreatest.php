@@ -164,24 +164,31 @@ class LatestAndGreatest {
             return false;
         }
 
-        // Get current stats
-        $profile = $this->getProfileArray();
+        try {
+            // Get current stats
+            $profile = $this->getProfileArray();
 
-        // Get current stats
-        $statistics = $this->getStatisticsArray();
+            // Get current stats
+            $statistics = $this->getStatisticsArray();
 
-        // Get latest data
-        $latest = $this->getPostsArray();
+            // Get latest data
+            $latest = $this->getPostsArray();
 
-        // Combine arrays
-        $data = [
-            'profile' => $profile,
-            'statistics' => $statistics,
-            'latest' => $latest
-        ];
+            // Combine arrays
+            $data = [
+                'profile' => $profile,
+                'statistics' => $statistics,
+                'latest' => $latest
+            ];
 
-        // Convert to json and save to cache file
-        file_put_contents($this->getCacheDirectory() . $this->cacheFileName, json_encode($data));
+            // Convert to json and save to cache file
+            file_put_contents($this->getCacheDirectory() . $this->cacheFileName, json_encode($data));
+
+        } catch(Exception $e) {
+            print_r([
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 
     /**
