@@ -284,7 +284,7 @@ class Facebook extends LatestAndGreatest {
     public function setConnection(object $connection) {
         if (!isset($connection) || empty($connection)) {
             if ($this->debug) {
-                trigger_error('Twitter connection cannot be empty', E_USER_NOTICE);
+                trigger_error('Facebook connection cannot be empty', E_USER_NOTICE);
                 die();
             }
         }
