@@ -6,7 +6,10 @@
     "type": "project",
     "require": {
         "vlucas/phpdotenv": "^4.1.4",
-        "abraham/twitteroauth": "^1.0.1"
+        "abraham/twitteroauth": "^1.0.1",
+        "league/oauth2-google": "^3.0",
+        "league/oauth2-instagram": "^3.0",
+        "facebook/graph-sdk": "^5.7"
     },
     "minimum-stability": "stable",
     "authors": [
