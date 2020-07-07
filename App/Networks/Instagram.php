@@ -3,6 +3,7 @@
 namespace LatestAndGreatest\Networks;
 
 use LatestAndGreatest\LatestAndGreatest;
+use InstagramScraper\Instagram as Scraper;
 
 class Instagram extends LatestAndGreatest {
     /**
@@ -20,39 +21,6 @@ class Instagram extends LatestAndGreatest {
      */
     public function __construct() {
         $this->setCacheFilename('instagram.data.json');
-    }
-
-    /**
-     * [setUsername description]
-     * @param string $userID [description]
-     */
-    public function setUserID(string $userID) {
-        if (!isset($userID) || empty($userID)) {
-            if ($this->debug) {
-                trigger_error('Instagram userID cannot be empty', E_USER_NOTICE);
-                die();
-            }
-        }
-
-        $this->userID = $userID;
-    }
-
-    /**
-     * [getUsername description]
-     * @param  string $userID [description]
-     * @return [type]           [description]
-     */
-    public function getUserID() {
-        if (!isset($this->userID) || empty($this->userID)) {
-            if ($this->debug) {
-                trigger_error('No Instagram userID set', E_USER_NOTICE);
-                die();
-            }
-
-            return NULL;
-        }
-
-        return $this->userID;
     }
 
     /**
@@ -94,39 +62,19 @@ class Instagram extends LatestAndGreatest {
      * @return [type]           [description]
      */
     public function scrape() {
-        // get username
-        $username = $this->getUsername();
-
         // do scrape if not already done
         if (!isset($this->scrape) || empty($this->scrape)) {
-            $source = file_get_contents('http://instagram.com/' . $username);
-            $re = '/<script[^>]*>(.*?)<\/script>/m';
-            preg_match_all($re, $source, $matches, PREG_SET_ORDER, 0);
+            $username = $this->getUsername();
 
-            // loop through matches
-            foreach ($matches as $match) {
-                // we only need to use the second array item
-                if (empty($match[1])) {
-                    continue;
-                }
+            $scraper = new Scraper();
 
-                // find required script content
-                if (substr($match[1], 0, 18) !== 'window._sharedData') {
-                    continue;
-                }
+            $scrape = $scraper->getAccount($username);
 
-                // convert script content (which should be json) to usable data
-                $json = substr(substr($match[1], 21), 0, -1);
-                $data = json_decode($json);
-
-                // check for valid node
-                if (!isset($data->entry_data->ProfilePage[0]->graphql->user)) {
-                    continue;
-                }
-
-                // push node into global scrape
-                $this->scrape = $data->entry_data->ProfilePage[0]->graphql->user;
+            if (!isset($scrape) || empty($scrape)) {
+                return NULL;
             }
+
+            $this->scrape = $scrape;
         }
 
         return $this->scrape;
@@ -137,35 +85,58 @@ class Instagram extends LatestAndGreatest {
      * @return [type] [description]
      */
     public function getProfile() {
-        $data = $this->scrape();
+        $scrape = $this->scrape();
 
         // initalise $profile return array
         $profile = [];
 
+        // Get profile id
+        $profile_id = $scrape->getId();
+        if (isset($profile_id)) {
+            $profile['id'] = $profile_id;
+        }
+
         // Get profile username
-        if (isset($data->username)) {
-            $profile['username'] = $data->username;
+        $profile_username = $scrape->getUsername();
+        if (isset($profile_username)) {
+            $profile['username'] = $profile_username;
         }
 
         // Get profile name
-        if (isset($data->full_name)) {
-            $profile['name'] = $data->full_name;
+        $profile_fullname = $scrape->getFullname();
+        if (isset($profile_fullname)) {
+            $profile['name'] = $profile_fullname;
         }
 
         // Get profile description
-        if (isset($data->biography)) {
-            $profile['description'] = $data->biography;
+        $profile_biography = $scrape->getBiography();
+        if (isset($profile_biography)) {
+            $profile['description'] = $profile_biography;
         }
 
         // Get media count
-        if (isset($data->edge_owner_to_timeline_media->count)) {
-            $profile['media_count'] = $data->edge_owner_to_timeline_media->count;
+        $profile_mediacount = $scrape->getMediaCount();
+        if (isset($profile_mediacount)) {
+            $profile['media_count'] = $profile_mediacount;
+        }
+
+        // Get follows count
+        $profile_follows = $scrape->getFollowsCount();
+        if (isset($profile_follows)) {
+            $profile['follows'] = $profile_follows;
+        }
+
+        // Get followed by count
+        $profile_followedby = $scrape->getFollowedByCount();
+        if (isset($profile_followedby)) {
+            $profile['followers'] = $profile_followedby;
         }
 
         // Get profile picture
-        if (isset($data->profile_pic_url_hd)) {
+        $profile_pic = $scrape->getProfilePicUrlHd();
+        if (isset($profile_pic)) {
             // Get image as data string
-            $imageDataString = @file_get_contents($data->profile_pic_url_hd);
+            $imageDataString = @file_get_contents($profile_pic);
 
             // Get image dimensions and mime type
             $imageData = getimagesizefromstring($imageDataString);
@@ -176,11 +147,6 @@ class Instagram extends LatestAndGreatest {
                 'height' => $imageData[0],
                 'src' => 'data:'. $imageData['mime'] .';base64,'. base64_encode($imageDataString)
             ];
-        }
-
-        // Get profile followers
-        if (isset($data->edge_followed_by->count)) {
-            $profile['followers'] = $data->edge_followed_by->count;
         }
 
         return $profile;
@@ -197,46 +163,62 @@ class Instagram extends LatestAndGreatest {
         // start posts array
         $posts = [];
 
-        if (!isset($scrape->edge_owner_to_timeline_media->edges) || empty($scrape->edge_owner_to_timeline_media->edges)) {
+        $medias = $scrape->getMedias();
+        if (!isset($medias) || empty($medias)) {
             return $posts;
         }
 
-        $items = array_slice($scrape->edge_owner_to_timeline_media->edges, 0, $this->getMaxResults());
+        $items = array_slice($medias, 0, $this->getMaxResults());
 
         foreach ($items as $item) {
-            if (!isset($item->node) || empty($item->node)) {
+            // add id
+            $id = $item->getId();
+            $timestamp = $item->getCreatedTime();
+            $shortcode = $item->getShortcode();
+
+            if (
+                !isset($id) || empty($id)
+                || !isset($timestamp) || empty($timestamp)
+                || !isset($shortcode) || empty($shortcode)
+            ) {
                 continue;
             }
 
-            // add id
-            $posts[$item->node->id] = [
-                'id' => $item->node->id,
-                'date' => $item->node->taken_at_timestamp,
-                'url' => 'https://www.instagram.com/p/' . $item->node->shortcode
+            $posts[$id] = [
+                'id' => $id,
+                'date' => $timestamp,
+                'url' => 'https://www.instagram.com/p/' . $shortcode
             ];
 
+            // get media likes
+            $likes = $item->getLikesCount();
+            if (isset($likes) && !empty($likes)) {
+                $posts[$id]['likes'] = $likes;
+            }
+
             // add caption
-            if (
-                isset($item->node->edge_media_to_caption->edges[0]->node->text)
-                && !empty($item->node->edge_media_to_caption->edges[0]->node->text)
-            ) {
-                $posts[$item->node->id]['text'] = $item->node->edge_media_to_caption->edges[0]->node->text;
+            $caption = $item->getCaption();
+            if (isset($caption) && !empty($caption)) {
+                $posts[$id]['text'] = $caption;
             }
 
             // add media
-            if (
-                isset($item->node->display_url)
-                && !empty($item->node->display_url)
-            ) {
-                $posts[$item->node->id]['media'] = [
-                    'thumbnail' => $item->node->display_url,
-                    'width' => $item->node->dimensions->width,
-                    'height' => $item->node->dimensions->height
+            $image = $item->getImageHighResolutionUrl();
+            if (isset($image) && !empty($image)) {
+
+                // Get image as data string
+                $imageDataString = @file_get_contents($image);
+
+                // Get image dimensions and mime type
+                $imageData = getimagesizefromstring($imageDataString);
+
+                // Build relevant array
+                $posts[$id]['media'] = [
+                    'width' => $imageData[0],
+                    'height' => $imageData[0],
+                    'src' => 'data:'. $imageData['mime'] .';base64,'. base64_encode($imageDataString)
                 ];
             }
-
-            // get media likes
-            $posts[$item->node->id]['likes'] = $item->node->edge_liked_by->count;
         }
 
         // Remove named keys
